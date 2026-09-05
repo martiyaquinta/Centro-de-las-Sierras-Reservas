@@ -37,43 +37,44 @@ export default async function HomePage() {
     <>
       <div className="mx-auto max-w-3xl px-4 pb-28 pt-4">
         {/* Hero */}
-        <section className="relative mb-6 overflow-hidden rounded-2xl bg-arena">
-          <div className="relative aspect-[5/4] sm:aspect-[16/10]">
-            <Image
-              src={
-                property.cover_photo_path
-                  ? property.cover_photo_path.startsWith("http") ||
-                    property.cover_photo_path.startsWith("/")
-                    ? property.cover_photo_path
-                    : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-photos/${property.cover_photo_path}`
-                  : "/brand/logo-beige.png"
-              }
-              alt={property.name}
-              fill
-              className={
-                property.cover_photo_path ? "object-cover" : "object-contain p-10 sm:p-16"
-              }
-              sizes="(max-width: 768px) 100vw, 720px"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-marron/70 via-marron/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 text-crema">
-              <div className="mb-2 flex items-center gap-2">
+        <section className="relative mb-6 overflow-hidden rounded-2xl bg-background">
+          <div className="relative flex flex-col items-center px-4 pb-6 pt-8 sm:pt-10">
+            {property.cover_photo_path ? (
+              <div className="relative mb-4 aspect-[5/4] w-full overflow-hidden rounded-2xl sm:aspect-[16/10]">
                 <Image
-                  src="/brand/logo-sinfondo.png"
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="rounded-full bg-crema/90 p-0.5"
+                  src={
+                    property.cover_photo_path.startsWith("http") ||
+                    property.cover_photo_path.startsWith("/")
+                      ? property.cover_photo_path
+                      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/property-photos/${property.cover_photo_path}`
+                  }
+                  alt={property.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  priority
                 />
-                <Badge variant="secondary" className="bg-crema/90 text-marron">
+              </div>
+            ) : (
+              <Image
+                src="/brand/logo-sinfondo.png"
+                alt={property.name}
+                width={280}
+                height={280}
+                className="mb-4 h-auto w-48 object-contain sm:w-64"
+                priority
+              />
+            )}
+            <div className="w-full text-center text-marron">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <Badge variant="secondary" className="bg-arena text-marron">
                   Tandil · centro
                 </Badge>
               </div>
               <h1 className="font-serif text-2xl font-semibold leading-tight sm:text-3xl">
                 {property.name}
               </h1>
-              <p className="mt-1 text-sm text-crema/90 sm:text-base">
+              <p className="mt-1 text-sm text-muted-foreground sm:text-base">
                 {property.tagline ?? "Escapada de finde con vista a las sierras."}
               </p>
             </div>
