@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #f3ede3;
+  --foreground: #3c2a21;
+  --card: #faf6f0;
+  --card-foreground: #3c2a21;
+  --popover: #faf6f0;
+  --popover-foreground: #3c2a21;
+  --primary: #c47a4a;
+  --primary-foreground: #faf6f0;
+  --secondary: #e8d5c4;
+  --secondary-foreground: #3c2a21;
+  --muted: #e8d5c4;
+  --muted-foreground: #7a8471;
+  --accent: #c99a3a;
+  --accent-foreground: #3c2a21;
+  --destructive: #b54a3a;
+  --destructive-foreground: #faf6f0;
+  --border: #e8d5c4;
+  --input: #e8d5c4;
+  --ring: #c47a4a;
+  --radius: 0.75rem;
+  --marron: #3c2a21;
+  --terracota: #c47a4a;
+  --beige: #f3ede3;
+  --mostaza: #c99a3a;
+  --arena: #e8d5c4;
+  --sage: #7a8471;
+  --crema: #faf6f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-marron: var(--marron);
+  --color-terracota: var(--terracota);
+  --color-beige: var(--beige);
+  --color-mostaza: var(--mostaza);
+  --color-arena: var(--arena);
+  --color-sage: var(--sage);
+  --color-crema: var(--crema);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-nunito);
+  --font-serif: var(--font-fraunces);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+}
