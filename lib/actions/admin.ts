@@ -299,83 +299,35 @@ export async function loginAction(
     return { ok: false, error: "Este email no está autorizado como admin" };
   }
 
-  if (!isSupabaseConfigured()) {
-    return {
-      ok: false,
-      error: "Supabase no configurado. No se puede entrar al admin.",
-    };
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: normalized,
-    password,
-  });
-  if (error) return { ok: false, error: error.message };
-  if (!isAllowedAdminEmail(data.user?.email)) {
-    await supabase.auth.signOut();
-    return { ok: false, error: "Este email no está autorizado como admin" };
-  }
-  return { ok: true };
-}
-
-/** Alta del segundo admin (allowlist). Si el mail no está autorizado, rechaza. */
-export async function registerAdminAction(
-  email: string,
-  password: string
-): Promise<ActionResult> {
-  const normalized = normalizeAdminEmail(email);
-  if (!isAllowedAdminEmail(normalized)) {
-    return { ok: false, error: "Este email no está autorizado para registrarse" };
-  }
-  if (password.trim().length < 6) {
-    return { ok: false, error: "La contraseña debe tener al menos 6 caracteres" };
-  }
-  if (!isSupabaseConfigured()) {
-    return { ok: false, error: "Supabase no configurado" };
-  }
-
-  const supabase = await createClient();
-
-  // Prefer signUp; if already exists, try login
-  const { data, error } = await supabase.auth.signUp({
-    email: normalized,
-    password,
-  });
-
-  if (error) {
-    // user already registered → try sign in
-    const msg = error.message.toLowerCase();
-    if (msg.includes("already") || msg.includes("registered") || error.status === 422) {
-      const login = await supabase.auth.signInWithPassword({
-        email: normalized,
-        password,
-      });
-      if (login.error) {
-        return {
-          ok: false,
-          error: "Esa cuenta ya existe. Probá entrar con la contraseña correcta.",
-        };
-      }
-      return { ok: true };
+  try {
+    if (!isSupabaseConfigured()) {
+      return {
+        ok: false,
+        error:
+          "Supabase no configurado en este entorno. Faltan NEXT_PUBLIC_SUPABASE_URL / ANON_KEY (local: .env.local · deploy: env del hosting). Reiniciá el server después de guardarlas.",
+      };
     }
-    return { ok: false, error: error.message };
-  }
 
-  // If email confirmations are on and no session, sign in anyway when possible
-  if (!data.session) {
-    const login = await supabase.auth.signInWithPassword({
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: normalized,
       password,
     });
-    if (login.error) {
-      return {
-        ok: true,
-      };
+    if (error) return { ok: false, error: error.message };
+    if (!isAllowedAdminEmail(data.user?.email)) {
+      await supabase.auth.signOut();
+      return { ok: false, error: "Este email no está autorizado como admin" };
     }
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error de login";
+    return { ok: false, error: msg };
   }
+}
 
-  return { ok: true };
+/** Registro público deshabilitado: solo existe el admin pre-creado. */
+export async function registerAdminAction(): Promise<ActionResult> {
+  return { ok: false, error: "El registro de admin está deshabilitado" };
 }
 
 export async function logoutAction(): Promise<void> {

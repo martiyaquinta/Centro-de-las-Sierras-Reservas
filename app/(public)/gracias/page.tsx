@@ -23,6 +23,7 @@ export default async function GraciasPage({ searchParams }: Props) {
   const checkOut = String(sp.out ?? "");
   const guests = Number(sp.guests ?? 1);
   const total = Number(sp.total ?? 0);
+  const autoWa = String(sp.wa ?? "") === "1";
 
   const property = await getProperty();
   const wa =
@@ -40,10 +41,19 @@ export default async function GraciasPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-12 text-center">
+      {wa && autoWa && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.location.replace(${JSON.stringify(wa)});`,
+          }}
+        />
+      )}
+
       <CheckCircle2 className="mb-4 h-14 w-14 text-primary" />
       <h1 className="font-serif text-2xl font-semibold">¡Listo, {name.split(" ")[0]}!</h1>
       <p className="mt-2 text-muted-foreground">
-        Recibimos tu solicitud. El dueño la revisa y te confirma.
+        Recibimos tu solicitud. Te redirigimos a WhatsApp con los datos de la reserva para
+        confirmar.
       </p>
 
       {code && (
@@ -66,7 +76,7 @@ export default async function GraciasPage({ searchParams }: Props) {
         {wa && (
           <Button asChild variant="whatsapp" size="lg">
             <a href={wa} target="_blank" rel="noopener noreferrer">
-              Seguir por WhatsApp
+              Abrir WhatsApp con la reserva
             </a>
           </Button>
         )}

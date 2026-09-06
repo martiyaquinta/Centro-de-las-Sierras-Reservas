@@ -34,6 +34,7 @@ export default async function ReservarPage() {
         cleaningFee={property.cleaning_fee}
         capacity={property.capacity}
         minNights={property.min_nights}
+        whatsappE164={property.whatsapp_e164}
       />
     </div>
   );

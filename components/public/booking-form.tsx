@@ -16,6 +16,7 @@ import { createReservationAction } from "@/lib/actions/reservations";
 import { calculateTotal } from "@/lib/pricing";
 import { disabledDaysMatcher } from "@/lib/availability";
 import { formatARS } from "@/lib/utils";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { Availability } from "@/lib/types";
 
 type Props = {
@@ -26,6 +27,7 @@ type Props = {
   cleaningFee: number;
   capacity: number;
   minNights: number;
+  whatsappE164?: string | null;
 };
 
 export function BookingForm({
@@ -36,6 +38,7 @@ export function BookingForm({
   cleaningFee,
   capacity,
   minNights,
+  whatsappE164 = null,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -86,10 +89,32 @@ export function BookingForm({
         toast.error(res.error);
         return;
       }
-      toast.success("Solicitud enviada");
-      router.push(
-        `/gracias?code=${encodeURIComponent(res.data!.publicCode)}&name=${encodeURIComponent(guestName)}&in=${checkIn}&out=${checkOut}&guests=${guests}&total=${pricing?.total ?? 0}`
-      );
+
+      const code = res.data!.publicCode;
+      const total = pricing?.total ?? 0;
+      const wa = buildWhatsAppUrl({
+        phoneE164: whatsappE164,
+        guestName,
+        checkIn,
+        checkOut,
+        guests,
+        publicCode: code,
+        totalAmount: total || undefined,
+        guestPhone,
+        message,
+      });
+
+      toast.success("Solicitud lista — te llevamos a WhatsApp");
+
+      const gracias = `/gracias?code=${encodeURIComponent(code)}&name=${encodeURIComponent(guestName)}&in=${checkIn}&out=${checkOut}&guests=${guests}&total=${total}&wa=1`;
+
+      if (wa) {
+        // Redirección inmediata a WhatsApp con el pedido armado
+        window.location.href = wa;
+        return;
+      }
+
+      router.push(gracias);
     });
   }
 
@@ -223,7 +248,7 @@ export function BookingForm({
             Es una solicitud. El dueño confirma y te escribe. No hay cobro online en esta versión.
           </p>
           <Button type="submit" size="lg" className="w-full" disabled={pending}>
-            {pending ? "Enviando..." : "Enviar solicitud"}
+            {pending ? "Enviando..." : "Reservar y abrir WhatsApp"}
           </Button>
         </CardContent>
       </Card>
