@@ -16,16 +16,18 @@ export function buildWhatsAppUrl(params: {
   guests: number;
   publicCode: string;
   totalAmount?: number;
+  guestPhone?: string | null;
+  message?: string | null;
 }): string | null {
   const phone = normalizeWhatsAppE164(params.phoneE164);
   if (!phone) return null;
 
-  const inFmt = format(parseISO(params.checkIn), "d MMM yyyy", { locale: es });
-  const outFmt = format(parseISO(params.checkOut), "d MMM yyyy", { locale: es });
+  const inFmt = format(parseISO(params.checkIn), "EEE d MMM yyyy", { locale: es });
+  const outFmt = format(parseISO(params.checkOut), "EEE d MMM yyyy", { locale: es });
 
   const lines = [
     `Hola! Soy ${params.guestName}.`,
-    `Quiero reservar Departamento de las Sierras.`,
+    `Quiero reservar el Departamento de las Sierras.`,
     `Check-in: ${inFmt}`,
     `Check-out: ${outFmt}`,
     `Huéspedes: ${params.guests}`,
@@ -35,6 +37,12 @@ export function buildWhatsAppUrl(params: {
     lines.push(
       `Total estimado: USD ${params.totalAmount.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
     );
+  }
+  if (params.guestPhone?.trim()) {
+    lines.push(`Mi WhatsApp: ${params.guestPhone.trim()}`);
+  }
+  if (params.message?.trim()) {
+    lines.push(`Mensaje: ${params.message.trim()}`);
   }
   lines.push("¡Gracias!");
 

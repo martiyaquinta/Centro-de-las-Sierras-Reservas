@@ -1,8 +1,5 @@
-/** Únicos emails autorizados a entrar / registrarse en /admin */
-export const ADMIN_EMAILS = [
-  "estudionomade2025@gmail.com",
-  "cmyaquinta@gmail.com",
-] as const;
+/** Único email autorizado a entrar en /admin. No hay registro público. */
+export const ADMIN_EMAILS = ["centrodelassierras@gmail.com"] as const;
 
 export type AdminEmail = (typeof ADMIN_EMAILS)[number];
 
