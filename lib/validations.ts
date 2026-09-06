@@ -62,7 +62,7 @@ export const availabilityRangeSchema = z.object({
 });
 
 export const reservationStatusSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   status: z.enum(["confirmed", "rejected", "cancelled"]),
   admin_note: z.string().max(1000).optional().or(z.literal("")),
 });

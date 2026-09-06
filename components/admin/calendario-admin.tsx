@@ -41,6 +41,12 @@ export function CalendarioAdmin({
       else if (status === "available") available.push(d);
       else blocked.push(d);
     }
+    // also mark booked nights even if not in availability map
+    for (const date of booked) {
+      if (!map.has(date)) {
+        occupied.push(new Date(date + "T12:00:00"));
+      }
+    }
     return { available, blocked, occupied };
   }
 
@@ -59,7 +65,7 @@ export function CalendarioAdmin({
       });
       if (!res.ok) toast.error(res.error);
       else {
-        toast.success(status === "available" ? "Abierto" : "Bloqueado");
+        toast.success(status === "available" ? "Marcado libre" : "Marcado ocupado/bloqueado");
         setRange(undefined);
       }
     });
@@ -68,7 +74,7 @@ export function CalendarioAdmin({
   function onDayClick(day: Date) {
     const key = format(day, "yyyy-MM-dd");
     if (booked.has(key)) {
-      toast.message("Noche ocupada por reserva");
+      toast.message("Ocupado por una reserva — gestioná en Reservas");
       return;
     }
     const cur = map.get(key) ?? "blocked";
@@ -76,24 +82,29 @@ export function CalendarioAdmin({
     startTransition(async () => {
       const res = await toggleAvailabilityDayAction(key, next);
       if (!res.ok) toast.error(res.error);
-      else toast.success(`${key}: ${next}`);
+      else toast.success(next === "available" ? `${key}: libre` : `${key}: ocupado`);
     });
   }
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Tocá un día para alternar available/blocked. O elegí rango y abrí/cerrá.
+        Tocá un día para alternar libre ↔ ocupado. O elegí un rango y usá los botones.
+        El rojo de reserva no se edita acá (va en Reservas).
       </p>
-      <div className="flex flex-wrap gap-3 text-xs">
-        <span className="flex items-center gap-1">
-          <span className="h-3 w-3 rounded-full bg-primary/40" /> Disponible
+
+      <div className="flex flex-wrap gap-2 text-xs sm:gap-3">
+        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700/30 bg-emerald-100 px-2.5 py-1 font-medium text-emerald-900">
+          <span className="h-3 w-3 rounded-full bg-emerald-600 ring-2 ring-emerald-200" />
+          Libre
         </span>
-        <span className="flex items-center gap-1">
-          <span className="h-3 w-3 rounded-full bg-muted-foreground/30" /> Bloqueado
+        <span className="inline-flex items-center gap-2 rounded-full border border-stone-400/40 bg-stone-200/80 px-2.5 py-1 font-medium text-stone-700">
+          <span className="h-3 w-3 rounded-full bg-stone-400 ring-2 ring-stone-200" />
+          Cerrado
         </span>
-        <span className="flex items-center gap-1">
-          <span className="h-3 w-3 rounded-full bg-destructive/50" /> Ocupado
+        <span className="inline-flex items-center gap-2 rounded-full border border-red-700/30 bg-red-100 px-2.5 py-1 font-medium text-red-900">
+          <span className="h-3 w-3 rounded-full bg-red-600 ring-2 ring-red-200" />
+          Ocupado (reserva)
         </span>
       </div>
 
@@ -105,23 +116,38 @@ export function CalendarioAdmin({
         numberOfMonths={1}
         modifiers={mods}
         modifiersClassNames={{
-          available: "bg-primary/20 text-marron font-semibold",
-          blocked: "opacity-40",
-          occupied: "bg-destructive/30 text-destructive line-through",
+          available:
+            "!bg-emerald-500 !text-white hover:!bg-emerald-600 font-bold shadow-sm ring-2 ring-emerald-700/30",
+          blocked:
+            "!bg-stone-300/90 !text-stone-600 hover:!bg-stone-400/80 font-medium",
+          occupied:
+            "!bg-red-600 !text-white hover:!bg-red-600 font-bold ring-2 ring-red-800/40 line-through decoration-white/80",
         }}
-        className={cn("rounded-xl border border-border bg-crema")}
+        className={cn("rounded-xl border border-border bg-crema p-3")}
       />
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={pending} onClick={() => apply("available")}>
-          Abrir rango
+        <Button
+          size="sm"
+          disabled={pending}
+          onClick={() => apply("available")}
+          className="bg-emerald-600 text-white hover:bg-emerald-700"
+        >
+          Marcar libre
         </Button>
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => apply("blocked")}>
-          Bloquear rango
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={pending}
+          onClick={() => apply("blocked")}
+          className="border-stone-400 bg-stone-100 text-stone-800 hover:bg-stone-200"
+        >
+          Marcar ocupado / cerrado
         </Button>
       </div>
       <Label className="text-xs text-muted-foreground">
-        Tip: seed abre vie+sáb. Podés abrir jueves o weekdays cuando quieras.
+        Verde = se puede reservar. Gris = cerrado. Rojo = ya hay reserva. Por defecto solo
+        sáb+dom están libres; abrí jue/vie para puentes.
       </Label>
     </div>
   );

@@ -4,6 +4,7 @@ import {
   parseISO,
   isBefore,
   startOfDay,
+  subDays,
 } from "date-fns";
 import type { Availability, Reservation } from "@/lib/types";
 
@@ -51,7 +52,10 @@ export function isRangeBookable(params: {
     return { ok: false, reason: "Elegí al menos una noche" };
   }
   if (nights.length < minNights) {
-    return { ok: false, reason: `Mínimo ${minNights} noche(s)` };
+    return {
+      ok: false,
+      reason: `Mínimo ${minNights} noche(s). Para el finde: entrás sábado y te vas lunes.`,
+    };
   }
 
   const today = format(startOfDay(new Date()), "yyyy-MM-dd");
@@ -63,16 +67,25 @@ export function isRangeBookable(params: {
 
   for (const night of nights) {
     if (availMap.get(night) !== "available") {
-      return { ok: false, reason: `La noche ${night} no está disponible` };
+      return {
+        ok: false,
+        reason: `La noche del ${night} no está disponible (solo findes / fechas abiertas)`,
+      };
     }
     if (bookedNights.has(night)) {
-      return { ok: false, reason: `La noche ${night} ya está reservada` };
+      return { ok: false, reason: `La noche del ${night} ya está reservada` };
     }
   }
 
   return { ok: true };
 }
 
+/**
+ * Días no clickeables en el calendario público.
+ * - Pasado / noches ocupadas: no
+ * - Noche available: sí (check-in o tramo)
+ * - Día siguiente a una noche available: sí (check-out, ej. lunes del finde)
+ */
 export function disabledDaysMatcher(
   availability: Availability[],
   bookedNights: Set<string>
@@ -82,9 +95,18 @@ export function disabledDaysMatcher(
 
   return (date: Date) => {
     if (isBefore(date, today)) return true;
+
     const key = format(date, "yyyy-MM-dd");
-    if (availMap.get(key) !== "available") return true;
     if (bookedNights.has(key)) return true;
-    return false;
+
+    if (availMap.get(key) === "available") return false;
+
+    // Permitir check-out el día después de una noche libre
+    const prevKey = format(subDays(date, 1), "yyyy-MM-dd");
+    if (availMap.get(prevKey) === "available" && !bookedNights.has(prevKey)) {
+      return false;
+    }
+
+    return true;
   };
 }

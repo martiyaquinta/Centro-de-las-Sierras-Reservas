@@ -32,7 +32,9 @@ export function buildWhatsAppUrl(params: {
     `Código: ${params.publicCode}`,
   ];
   if (params.totalAmount != null) {
-    lines.push(`Total estimado: $${params.totalAmount.toLocaleString("es-AR")} ARS`);
+    lines.push(
+      `Total estimado: USD ${params.totalAmount.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
+    );
   }
   lines.push("¡Gracias!");
 

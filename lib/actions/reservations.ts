@@ -13,11 +13,39 @@ import {
   createServiceClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
-import { getProperty } from "@/lib/data";
+import {
+  addDemoReservation,
+  getActiveReservationsForBooking,
+  getAvailability,
+  getProperty,
+  updateDemoReservationStatus,
+} from "@/lib/data";
+import { notifyAdminNewReservation } from "@/lib/notify";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
   | { ok: false; error: string };
+
+async function sendAdminMail(params: {
+  publicCode: string;
+  guestName: string;
+  guestPhone: string;
+  guestEmail?: string | null;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  nights: number;
+  totalAmount: number;
+  currency: string;
+  message?: string | null;
+}) {
+  // fire-and-forget-ish: await so logs land, but never fail the booking
+  try {
+    await notifyAdminNewReservation(params);
+  } catch (e) {
+    console.error("[createReservation] notify failed", e);
+  }
+}
 
 export async function createReservationAction(
   raw: unknown
@@ -34,30 +62,13 @@ export async function createReservationAction(
     return { ok: false, error: `Máximo ${property.capacity} personas` };
   }
 
-  if (!isSupabaseConfigured()) {
-    // Demo mode: accept and return fake code (no persist)
-    const code = generatePublicCode();
-    return {
-      ok: true,
-      data: { publicCode: code, id: "demo-" + code },
-    };
-  }
-
-  const service = createServiceClient();
-
-  const [{ data: availability }, { data: activeRes }] = await Promise.all([
-    service.from("availability").select("*"),
-    service
-      .from("reservations")
-      .select("check_in, check_out, status, hold_until")
-      .in("status", ["pending", "confirmed"]),
-  ]);
-
-  const booked = buildBookedNightSet(activeRes ?? []);
+  const availability = await getAvailability();
+  const activeRes = await getActiveReservationsForBooking();
+  const booked = buildBookedNightSet(activeRes);
   const bookable = isRangeBookable({
     checkIn: input.checkIn,
     checkOut: input.checkOut,
-    availability: availability ?? [],
+    availability,
     bookedNights: booked,
     minNights: property.min_nights,
   });
@@ -75,6 +86,54 @@ export async function createReservationAction(
   });
 
   const holdUntil = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+  const now = new Date().toISOString();
+
+  const notifyPayload = {
+    publicCode: "",
+    guestName: input.guestName,
+    guestPhone: input.guestPhone,
+    guestEmail: input.guestEmail || null,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    guests: input.guests,
+    nights,
+    totalAmount: total,
+    currency: property.currency,
+    message: input.message || null,
+  };
+
+  if (!isSupabaseConfigured()) {
+    const publicCode = generatePublicCode();
+    const id = `demo-${publicCode}`;
+    await addDemoReservation({
+      id,
+      public_code: publicCode,
+      check_in: input.checkIn,
+      check_out: input.checkOut,
+      guests: input.guests,
+      guest_name: input.guestName,
+      guest_email: input.guestEmail || null,
+      guest_phone: input.guestPhone,
+      message: input.message || null,
+      nights,
+      total_amount: total,
+      currency: property.currency,
+      status: "pending",
+      hold_until: holdUntil,
+      admin_note: null,
+      created_at: now,
+      updated_at: now,
+    });
+    await sendAdminMail({ ...notifyPayload, publicCode });
+    revalidatePath("/reservar");
+    revalidatePath("/admin");
+    revalidatePath("/admin/reservas");
+    revalidatePath("/admin/calendario");
+    return { ok: true, data: { publicCode, id } };
+  }
+
+  const service = createServiceClient();
+
   let publicCode = generatePublicCode();
   let attempts = 0;
 
@@ -100,6 +159,7 @@ export async function createReservationAction(
       .single();
 
     if (!error && data) {
+      await sendAdminMail({ ...notifyPayload, publicCode: data.public_code });
       revalidatePath("/reservar");
       revalidatePath("/admin");
       revalidatePath("/admin/reservas");
@@ -125,6 +185,20 @@ export async function updateReservationStatusAction(
   const parsed = reservationStatusSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos" };
+  }
+
+  if (!isSupabaseConfigured()) {
+    const ok = await updateDemoReservationStatus(
+      parsed.data.id,
+      parsed.data.status,
+      parsed.data.admin_note || null
+    );
+    if (!ok) return { ok: false, error: "Reserva no encontrada" };
+    revalidatePath("/admin");
+    revalidatePath("/admin/reservas");
+    revalidatePath("/admin/calendario");
+    revalidatePath("/reservar");
+    return { ok: true };
   }
 
   const supabase = await createClient();

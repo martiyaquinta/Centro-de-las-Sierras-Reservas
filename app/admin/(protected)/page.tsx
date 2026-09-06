@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AdminPendingAlerts } from "@/components/admin/admin-pending-alerts";
 import { getAllReservations, getAvailability, getProperty } from "@/lib/data";
 import { formatARS } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
@@ -28,6 +29,11 @@ export default async function AdminDashboard() {
         <h1 className="font-serif text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">{property.name}</p>
       </div>
+
+      <AdminPendingAlerts
+        pendingCount={pending.length}
+        latestCode={pending[0]?.public_code ?? null}
+      />
 
       {!configured && (
         <Card className="border-mostaza/40 bg-mostaza/10">

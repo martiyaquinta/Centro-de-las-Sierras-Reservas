@@ -2,9 +2,15 @@ import type { Availability, Photo, Property, Reservation } from "@/lib/types";
 import {
   DEMO_PHOTOS,
   DEMO_PROPERTY,
-  DEMO_RESERVATIONS,
-  buildDemoAvailability,
 } from "@/lib/seed-data";
+import {
+  addDemoReservation,
+  getDemoAvailability,
+  getDemoReservations,
+  setDemoAvailabilityDay,
+  setDemoAvailabilityRange,
+  updateDemoReservationStatus,
+} from "@/lib/demo-store";
 import { isSupabaseConfigured, createClient, createServiceClient } from "@/lib/supabase/server";
 
 function parseAmenities(raw: unknown): string[] {
@@ -34,7 +40,7 @@ function mapProperty(row: Record<string, unknown>): Property {
     weekend_pack_price:
       row.weekend_pack_price == null ? null : Number(row.weekend_pack_price),
     cleaning_fee: Number(row.cleaning_fee ?? 0),
-    currency: String(row.currency ?? "ARS"),
+    currency: String(row.currency ?? "USD"),
     min_nights: Number(row.min_nights ?? 1),
     check_in_time: (row.check_in_time as string) ?? null,
     check_out_time: (row.check_out_time as string) ?? null,
@@ -73,7 +79,7 @@ export async function getPhotos(): Promise<Photo[]> {
 }
 
 export async function getAvailability(): Promise<Availability[]> {
-  if (!isSupabaseConfigured()) return buildDemoAvailability();
+  if (!isSupabaseConfigured()) return getDemoAvailability();
   try {
     const supabase = await createClient();
     const today = new Date().toISOString().slice(0, 10);
@@ -82,17 +88,27 @@ export async function getAvailability(): Promise<Availability[]> {
       .select("*")
       .gte("night_date", today)
       .order("night_date", { ascending: true });
-    if (error || !data) return buildDemoAvailability();
+    if (error || !data) return getDemoAvailability();
     return data as Availability[];
   } catch {
-    return buildDemoAvailability();
+    return getDemoAvailability();
   }
 }
 
 export async function getActiveReservationsForBooking(): Promise<
   Pick<Reservation, "check_in" | "check_out" | "status" | "hold_until">[]
 > {
-  if (!isSupabaseConfigured()) return DEMO_RESERVATIONS;
+  if (!isSupabaseConfigured()) {
+    const all = await getDemoReservations();
+    return all
+      .filter((r) => r.status === "pending" || r.status === "confirmed")
+      .map((r) => ({
+        check_in: r.check_in,
+        check_out: r.check_out,
+        status: r.status,
+        hold_until: r.hold_until,
+      }));
+  }
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -107,9 +123,11 @@ export async function getActiveReservationsForBooking(): Promise<
 }
 
 export async function getReservationByCode(code: string): Promise<Reservation | null> {
-  if (!isSupabaseConfigured()) return null;
+  if (!isSupabaseConfigured()) {
+    const all = await getDemoReservations();
+    return all.find((r) => r.public_code.toUpperCase() === code.toUpperCase()) ?? null;
+  }
   try {
-    // Prefer service role; fall back to anon server client
     let supabase;
     try {
       supabase = createServiceClient();
@@ -129,7 +147,7 @@ export async function getReservationByCode(code: string): Promise<Reservation | 
 }
 
 export async function getAllReservations(): Promise<Reservation[]> {
-  if (!isSupabaseConfigured()) return [];
+  if (!isSupabaseConfigured()) return getDemoReservations();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reservations")
@@ -147,3 +165,11 @@ export function photoPublicUrl(storagePath: string): string {
   if (!base) return storagePath;
   return `${base}/storage/v1/object/public/property-photos/${storagePath}`;
 }
+
+/** Demo helpers re-exported for actions */
+export {
+  addDemoReservation,
+  setDemoAvailabilityDay,
+  setDemoAvailabilityRange,
+  updateDemoReservationStatus,
+};

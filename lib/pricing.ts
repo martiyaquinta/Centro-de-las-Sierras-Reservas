@@ -4,12 +4,13 @@ export function nightsBetween(checkIn: string, checkOut: string): number {
   return differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn));
 }
 
+/** Finde normal: check-in sábado, check-out lunes (noches sáb + dom) = pack USD 100 */
 export function isWeekendPackRange(checkIn: string, checkOut: string): boolean {
   const nights = nightsBetween(checkIn, checkOut);
   if (nights !== 2) return false;
-  const inDay = getDay(parseISO(checkIn)); // 5 = viernes
-  const outDay = getDay(parseISO(checkOut)); // 0 = domingo
-  return inDay === 5 && outDay === 0;
+  const inDay = getDay(parseISO(checkIn)); // 6 = sábado
+  const outDay = getDay(parseISO(checkOut)); // 1 = lunes
+  return inDay === 6 && outDay === 1;
 }
 
 export function calculateTotal(params: {
