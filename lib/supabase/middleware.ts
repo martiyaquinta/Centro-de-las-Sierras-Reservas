@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAllowedAdminEmail } from "@/lib/admin-allowlist";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -8,6 +9,13 @@ export async function updateSession(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
+    // Sin Supabase no hay admin real
+    const path = request.nextUrl.pathname;
+    if (path.startsWith("/admin") && path !== "/admin/login") {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/admin/login";
+      return NextResponse.redirect(redirect);
+    }
     return supabaseResponse;
   }
 
@@ -34,14 +42,22 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = path.startsWith("/admin");
   const isLogin = path === "/admin/login";
 
-  if (isAdminRoute && !isLogin && !user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/admin/login";
-    redirect.searchParams.set("next", path);
-    return NextResponse.redirect(redirect);
+  const allowed = isAllowedAdminEmail(user?.email);
+
+  if (isAdminRoute && !isLogin) {
+    if (!user || !allowed) {
+      // sesión de un mail no autorizado → cerrar
+      if (user && !allowed) {
+        await supabase.auth.signOut();
+      }
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/admin/login";
+      redirect.searchParams.set("next", path);
+      return NextResponse.redirect(redirect);
+    }
   }
 
-  if (isLogin && user) {
+  if (isLogin && user && allowed) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/admin";
     return NextResponse.redirect(redirect);

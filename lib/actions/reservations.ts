@@ -21,6 +21,7 @@ import {
   updateDemoReservationStatus,
 } from "@/lib/data";
 import { notifyAdminNewReservation } from "@/lib/notify";
+import { isAllowedAdminEmail } from "@/lib/admin-allowlist";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -206,6 +207,11 @@ export async function updateReservationStatusAction(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "No autenticado" };
+
+  if (!isAllowedAdminEmail(user.email)) {
+    await supabase.auth.signOut();
+    return { ok: false, error: "No autorizado" };
+  }
 
   const { error } = await supabase
     .from("reservations")
