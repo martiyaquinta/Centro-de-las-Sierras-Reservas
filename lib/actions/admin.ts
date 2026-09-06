@@ -12,6 +12,10 @@ import {
   setDemoAvailabilityDay,
   setDemoAvailabilityRange,
 } from "@/lib/data";
+import {
+  isAllowedAdminEmail,
+  normalizeAdminEmail,
+} from "@/lib/admin-allowlist";
 import type { ActionResult } from "@/lib/actions/reservations";
 
 async function requireAdmin() {
@@ -20,6 +24,10 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
+  if (!isAllowedAdminEmail(user.email)) {
+    await supabase.auth.signOut();
+    throw new Error("No autorizado");
+  }
   return supabase;
 }
 
@@ -286,24 +294,87 @@ export async function loginAction(
   email: string,
   password: string
 ): Promise<ActionResult> {
+  const normalized = normalizeAdminEmail(email);
+  if (!isAllowedAdminEmail(normalized)) {
+    return { ok: false, error: "Este email no está autorizado como admin" };
+  }
+
   if (!isSupabaseConfigured()) {
-    // Demo admin: cualquier email + pass demo / 000000
-    const ok =
-      password === "demo" ||
-      password === "000000" ||
-      password.toLowerCase() === "admin";
-    if (!ok) {
-      return {
-        ok: false,
-        error: "Modo demo: usá contraseña demo o 000000",
-      };
-    }
-    return { ok: true };
+    return {
+      ok: false,
+      error: "Supabase no configurado. No se puede entrar al admin.",
+    };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: normalized,
+    password,
+  });
   if (error) return { ok: false, error: error.message };
+  if (!isAllowedAdminEmail(data.user?.email)) {
+    await supabase.auth.signOut();
+    return { ok: false, error: "Este email no está autorizado como admin" };
+  }
+  return { ok: true };
+}
+
+/** Alta del segundo admin (allowlist). Si el mail no está autorizado, rechaza. */
+export async function registerAdminAction(
+  email: string,
+  password: string
+): Promise<ActionResult> {
+  const normalized = normalizeAdminEmail(email);
+  if (!isAllowedAdminEmail(normalized)) {
+    return { ok: false, error: "Este email no está autorizado para registrarse" };
+  }
+  if (password.trim().length < 6) {
+    return { ok: false, error: "La contraseña debe tener al menos 6 caracteres" };
+  }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, error: "Supabase no configurado" };
+  }
+
+  const supabase = await createClient();
+
+  // Prefer signUp; if already exists, try login
+  const { data, error } = await supabase.auth.signUp({
+    email: normalized,
+    password,
+  });
+
+  if (error) {
+    // user already registered → try sign in
+    const msg = error.message.toLowerCase();
+    if (msg.includes("already") || msg.includes("registered") || error.status === 422) {
+      const login = await supabase.auth.signInWithPassword({
+        email: normalized,
+        password,
+      });
+      if (login.error) {
+        return {
+          ok: false,
+          error: "Esa cuenta ya existe. Probá entrar con la contraseña correcta.",
+        };
+      }
+      return { ok: true };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  // If email confirmations are on and no session, sign in anyway when possible
+  if (!data.session) {
+    const login = await supabase.auth.signInWithPassword({
+      email: normalized,
+      password,
+    });
+    if (login.error) {
+      return {
+        ok: true,
+      };
+    }
+  }
+
   return { ok: true };
 }
 
