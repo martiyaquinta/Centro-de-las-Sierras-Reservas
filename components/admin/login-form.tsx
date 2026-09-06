@@ -36,7 +36,7 @@ export function LoginForm() {
       <Card className="w-full max-w-sm bg-crema">
         <CardHeader className="items-center text-center">
           <Image src="/brand/logo-sinfondo.png" alt="" width={64} height={64} className="mb-2" />
-          <CardTitle className="font-serif text-xl">Admin · Las Sierras</CardTitle>
+          <CardTitle className="font-serif text-xl">Admin · De Las Sierras</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -62,6 +62,10 @@ export function LoginForm() {
                 required
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Sin Supabase (demo): cualquier email + contraseña <strong>demo</strong> o{" "}
+              <strong>000000</strong>.
+            </p>
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Entrando..." : "Entrar"}
             </Button>

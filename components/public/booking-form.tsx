@@ -99,7 +99,8 @@ export function BookingForm({
         <CardHeader>
           <CardTitle className="font-serif text-xl">Elegí tus noches</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Solo se habilitan fechas disponibles. Check-out es el día que te vas.
+            Solo findes (y puentes que abramos). Check-in el sábado · check-out el lunes.
+            Las fechas tachadas no se pueden elegir.
           </p>
         </CardHeader>
         <CardContent>
@@ -190,7 +191,7 @@ export function BookingForm({
           </div>
           {weekendPackPrice != null && weekendPackPrice > 0 && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Pack finde (vie–dom)</span>
+              <span className="text-muted-foreground">Pack finde (sáb–dom)</span>
               <span>{formatARS(weekendPackPrice)}</span>
             </div>
           )}

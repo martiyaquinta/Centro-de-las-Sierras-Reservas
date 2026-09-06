@@ -24,7 +24,7 @@ export default async function ReservarPage() {
     <div className="mx-auto max-w-lg px-4 py-6">
       <h1 className="mb-1 font-serif text-2xl font-semibold">Reservá tu finde</h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        Elegí noches disponibles, contanos quiénes vienen y te confirmamos.
+        Findes: entrás sábado y te vas lunes (2 noches). Si hay puente, abrimos los días extra.
       </p>
       <BookingForm
         availability={availability}

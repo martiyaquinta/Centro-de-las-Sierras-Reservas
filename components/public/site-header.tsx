@@ -15,7 +15,7 @@ export function SiteHeader() {
             priority
           />
           <span className="font-serif text-sm font-semibold leading-tight text-marron sm:text-base">
-            Las Sierras
+            De Las Sierras
           </span>
         </Link>
         <Link

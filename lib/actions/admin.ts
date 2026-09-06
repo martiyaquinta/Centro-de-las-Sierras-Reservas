@@ -7,7 +7,11 @@ import {
   propertyContentSchema,
   propertyPriceSchema,
 } from "@/lib/validations";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import {
+  setDemoAvailabilityDay,
+  setDemoAvailabilityRange,
+} from "@/lib/data";
 import type { ActionResult } from "@/lib/actions/reservations";
 
 async function requireAdmin() {
@@ -107,10 +111,21 @@ export async function setAvailabilityRangeAction(raw: unknown): Promise<ActionRe
   }
   const { from, to, status, note } = parsed.data;
   try {
-    const supabase = await requireAdmin();
     const days = eachDayOfInterval({ start: parseISO(from), end: parseISO(to) });
-    const rows = days.map((d) => ({
-      night_date: format(d, "yyyy-MM-dd"),
+    const dates = days.map((d) => format(d, "yyyy-MM-dd"));
+
+    if (!isSupabaseConfigured()) {
+      await setDemoAvailabilityRange(from, to, status, dates);
+      revalidatePath("/reservar");
+      revalidatePath("/admin/calendario");
+      revalidatePath("/admin");
+      revalidatePath("/");
+      return { ok: true };
+    }
+
+    const supabase = await requireAdmin();
+    const rows = dates.map((night_date) => ({
+      night_date,
       status,
       note: note || null,
       updated_at: new Date().toISOString(),
@@ -123,6 +138,7 @@ export async function setAvailabilityRangeAction(raw: unknown): Promise<ActionRe
 
     revalidatePath("/reservar");
     revalidatePath("/admin/calendario");
+    revalidatePath("/admin");
     revalidatePath("/");
     return { ok: true };
   } catch (e) {
@@ -135,6 +151,14 @@ export async function toggleAvailabilityDayAction(
   nextStatus: "available" | "blocked"
 ): Promise<ActionResult> {
   try {
+    if (!isSupabaseConfigured()) {
+      await setDemoAvailabilityDay(nightDate, nextStatus);
+      revalidatePath("/reservar");
+      revalidatePath("/admin/calendario");
+      revalidatePath("/admin");
+      return { ok: true };
+    }
+
     const supabase = await requireAdmin();
     const { error } = await supabase.from("availability").upsert(
       {
@@ -147,6 +171,7 @@ export async function toggleAvailabilityDayAction(
     if (error) return { ok: false, error: error.message };
     revalidatePath("/reservar");
     revalidatePath("/admin/calendario");
+    revalidatePath("/admin");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -261,6 +286,21 @@ export async function loginAction(
   email: string,
   password: string
 ): Promise<ActionResult> {
+  if (!isSupabaseConfigured()) {
+    // Demo admin: cualquier email + pass demo / 000000
+    const ok =
+      password === "demo" ||
+      password === "000000" ||
+      password.toLowerCase() === "admin";
+    if (!ok) {
+      return {
+        ok: false,
+        error: "Modo demo: usá contraseña demo o 000000",
+      };
+    }
+    return { ok: true };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, error: error.message };
@@ -268,6 +308,10 @@ export async function loginAction(
 }
 
 export async function logoutAction(): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    revalidatePath("/admin");
+    return;
+  }
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/admin");
