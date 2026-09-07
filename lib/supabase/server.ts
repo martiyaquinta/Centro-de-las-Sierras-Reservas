@@ -3,21 +3,30 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 function env(name: string): string {
-  return (process.env[name] ?? "").trim();
+  // Acceso dinámico: evita que Next inlinee "" en build si la var no estaba.
+  return String(process.env[name] ?? "").trim();
+}
+
+function firstEnv(...names: string[]): string {
+  for (const name of names) {
+    const v = env(name);
+    if (v) return v;
+  }
+  return "";
 }
 
 export function getSupabaseUrl(): string {
-  return env("NEXT_PUBLIC_SUPABASE_URL");
+  return firstEnv("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL");
 }
 
 export function getSupabaseAnonKey(): string {
-  return env("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  return firstEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
 }
 
 export function isSupabaseConfigured(): boolean {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();
-  return Boolean(url && key && url.startsWith("http"));
+  return Boolean(url && key && /^https?:\/\//i.test(url));
 }
 
 export async function createClient() {
