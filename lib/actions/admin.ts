@@ -7,7 +7,11 @@ import {
   propertyContentSchema,
   propertyPriceSchema,
 } from "@/lib/validations";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import {
+  createClient,
+  createServiceClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/server";
 import {
   setDemoAvailabilityDay,
   setDemoAvailabilityRange,
@@ -299,6 +303,18 @@ export async function loginAction(
     return { ok: false, error: "Este email no está autorizado como admin" };
   }
 
+  const adminPassword = (process.env.ADMIN_PASSWORD ?? "").trim();
+  if (!adminPassword) {
+    return {
+      ok: false,
+      error:
+        "Falta ADMIN_PASSWORD en .env.local. Guardala y reiniciá el server.",
+    };
+  }
+  if (password !== adminPassword) {
+    return { ok: false, error: "Credenciales inválidas" };
+  }
+
   try {
     if (!isSupabaseConfigured()) {
       return {
@@ -308,10 +324,34 @@ export async function loginAction(
       };
     }
 
+    const service = createServiceClient();
+    const { data: listed, error: listError } =
+      await service.auth.admin.listUsers({ page: 1, perPage: 200 });
+    if (listError) return { ok: false, error: listError.message };
+
+    const existing = listed.users.find(
+      (u) => normalizeAdminEmail(u.email ?? "") === normalized
+    );
+
+    if (!existing) {
+      const { error: createError } = await service.auth.admin.createUser({
+        email: normalized,
+        password: adminPassword,
+        email_confirm: true,
+      });
+      if (createError) return { ok: false, error: createError.message };
+    } else {
+      const { error: updateError } = await service.auth.admin.updateUserById(
+        existing.id,
+        { password: adminPassword }
+      );
+      if (updateError) return { ok: false, error: updateError.message };
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalized,
-      password,
+      password: adminPassword,
     });
     if (error) return { ok: false, error: error.message };
     if (!isAllowedAdminEmail(data.user?.email)) {
