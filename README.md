@@ -2,6 +2,8 @@
 
 App de reservas para **un solo departamento** en Tandil (San Martín e Yrigoyen).
 
+- **Prod:** https://departamentodelassierras.vercel.app  
+  (`centrodelassierras.vercel.app` redirige 308 al dominio nuevo)
 - **Público:** landing, galería, calendario, solicitud de reserva, seguimiento por código, WhatsApp
 - **Admin:** login, reservas (confirm/reject), calendario availability, fotos, precio, contenido
 - **Stack:** Next.js 15 · TypeScript · Tailwind v4 · shadcn/ui · PWA · Supabase
