@@ -308,7 +308,7 @@ export async function loginAction(
     return {
       ok: false,
       error:
-        "Falta ADMIN_PASSWORD en .env.local. Guardala y reiniciá el server.",
+        "Falta ADMIN_PASSWORD (local: .env.local · Vercel: Project → Settings → Environment Variables). Guardala, redeploy y probá de nuevo.",
     };
   }
   if (password !== adminPassword) {
