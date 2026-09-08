@@ -26,7 +26,7 @@ except ImportError:
     sys.exit(1)
 
 ROOT = Path(__file__).resolve().parents[1]
-SQL_PATH = ROOT / "supabase/migrations/0001_init.sql"
+MIGRATIONS_DIR = ROOT / "supabase/migrations"
 PHOTOS_DIR = ROOT / "public/photos"
 
 
@@ -243,24 +243,36 @@ def main() -> None:
     if not base or not anon or not service:
         raise SystemExit("Faltan keys en .env.local")
     ref = project_ref(base)
-    sql = SQL_PATH.read_text()
+    migration_files = sorted(MIGRATIONS_DIR.glob("*.sql"))
+    if not migration_files:
+        raise SystemExit(f"No hay migrations en {MIGRATIONS_DIR}")
     print("Proyecto", ref)
+    print("Migrations:", ", ".join(p.name for p in migration_files))
+
+    def apply_all(apply_fn) -> None:
+        for path in migration_files:
+            print("→", path.name)
+            apply_fn(path.read_text())
 
     if env.get("DATABASE_URL"):
-        apply_sql_pg(env["DATABASE_URL"], sql)
+        apply_all(lambda sql: apply_sql_pg(env["DATABASE_URL"], sql))
     elif env.get("SUPABASE_ACCESS_TOKEN"):
-        apply_sql_management(env["SUPABASE_ACCESS_TOKEN"], ref, sql)
+        apply_all(
+            lambda sql: apply_sql_management(env["SUPABASE_ACCESS_TOKEN"], ref, sql)
+        )
     elif env.get("SUPABASE_DB_PASSWORD"):
         last = None
+        applied = False
         for u in candidate_db_urls(ref, env["SUPABASE_DB_PASSWORD"]):
             try:
-                apply_sql_pg(u, sql)
+                apply_all(lambda sql, url=u: apply_sql_pg(url, sql))
                 last = None
+                applied = True
                 break
             except Exception as e:  # noqa: BLE001
                 last = e
                 print("intento PG falló:", str(e)[:120])
-        if last is not None:
+        if not applied:
             raise SystemExit(f"No pude conectar a Postgres: {last}")
     else:
         raise SystemExit(

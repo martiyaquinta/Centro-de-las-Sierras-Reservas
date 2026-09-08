@@ -33,10 +33,10 @@ async function writeStore(store: DemoStore): Promise<void> {
   await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
 }
 
-/** Seed sáb/dom + overrides del admin (available/blocked). */
-export async function getDemoAvailability(weeks = 16): Promise<Availability[]> {
+/** Seed vie+sáb hasta fin 2026 + overrides del admin (available/blocked). */
+export async function getDemoAvailability(endDate = "2026-12-31"): Promise<Availability[]> {
   const store = await ensureStore();
-  const base = buildDemoAvailability(weeks);
+  const base = buildDemoAvailability(endDate);
   const byDate = new Map(base.map((a) => [a.night_date, a]));
 
   for (const [night_date, status] of Object.entries(store.availabilityOverrides)) {

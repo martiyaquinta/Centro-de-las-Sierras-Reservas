@@ -93,7 +93,7 @@ export default async function HomePage() {
         {/* Highlights */}
         <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: CalendarDays, label: "Finde", sub: "Sáb a dom" },
+            { icon: CalendarDays, label: "Finde", sub: "Entra vie · sale dom" },
             { icon: Users, label: "2 a 3", sub: "2 adultos + 1 menor" },
             { icon: MapPin, label: "Cerquita de todo", sub: "Centro, dique y calvario" },
             { icon: Mountain, label: "Tandil", sub: "sierras cerca" },
@@ -168,7 +168,7 @@ export default async function HomePage() {
               </p>
               {property.weekend_pack_price != null && property.weekend_pack_price > 0 && (
                 <p className="text-sm text-marron">
-                  Pack finde (sáb–dom):{" "}
+                  Pack finde (vie–dom):{" "}
                   <strong>{formatARS(property.weekend_pack_price)}</strong>
                 </p>
               )}

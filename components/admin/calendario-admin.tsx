@@ -147,7 +147,7 @@ export function CalendarioAdmin({
       </div>
       <Label className="text-xs text-muted-foreground">
         Verde = se puede reservar. Gris = cerrado. Rojo = ya hay reserva. Por defecto solo
-        sáb+dom están libres; abrí jue/vie para puentes.
+        vie+sáb están libres (check-out domingo); abrí jue u otros días para puentes.
       </Label>
     </div>
   );

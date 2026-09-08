@@ -31,7 +31,7 @@ export function buildReservationEmail(p: ReservationNotifyPayload): {
 } {
   const inLabel = fmtDate(p.checkIn);
   const outLabel = fmtDate(p.checkOut);
-  const total = formatMoney(p.totalAmount, p.currency || "USD");
+  const total = formatMoney(p.totalAmount, p.currency || "ARS");
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "";
   const adminUrl = site ? `${site}/admin/reservas` : "/admin/reservas";
 

@@ -1,5 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatMoney } from "@/lib/utils";
 
 export function normalizeWhatsAppE164(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -16,6 +17,7 @@ export function buildWhatsAppUrl(params: {
   guests: number;
   publicCode: string;
   totalAmount?: number;
+  currency?: string;
   guestPhone?: string | null;
   message?: string | null;
 }): string | null {
@@ -34,9 +36,7 @@ export function buildWhatsAppUrl(params: {
     `Código: ${params.publicCode}`,
   ];
   if (params.totalAmount != null) {
-    lines.push(
-      `Total estimado: USD ${params.totalAmount.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`
-    );
+    lines.push(`Total estimado: ${formatMoney(params.totalAmount, params.currency ?? "ARS")}`);
   }
   if (params.guestPhone?.trim()) {
     lines.push(`Mi WhatsApp: ${params.guestPhone.trim()}`);

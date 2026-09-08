@@ -54,7 +54,7 @@ export function isRangeBookable(params: {
   if (nights.length < minNights) {
     return {
       ok: false,
-      reason: `Mínimo ${minNights} noche(s). Para el finde: entrás sábado y te vas lunes.`,
+      reason: `Mínimo ${minNights} noche(s). Para el finde: entrás viernes y te vas domingo.`,
     };
   }
 
@@ -84,7 +84,7 @@ export function isRangeBookable(params: {
  * Días no clickeables en el calendario público.
  * - Pasado / noches ocupadas: no
  * - Noche available: sí (check-in o tramo)
- * - Día siguiente a una noche available: sí (check-out, ej. lunes del finde)
+ * - Día siguiente a una noche available: sí (check-out, ej. domingo del finde)
  */
 export function disabledDaysMatcher(
   availability: Availability[],
