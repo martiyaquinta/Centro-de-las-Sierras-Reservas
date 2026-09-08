@@ -14,15 +14,11 @@ export function PrecioForm({ property }: { property: Property }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [price, setPrice] = useState(String(property.price_per_night));
-  const [pack, setPack] = useState(
-    property.weekend_pack_price != null ? String(property.weekend_pack_price) : ""
-  );
   const [cleaning, setCleaning] = useState(String(property.cleaning_fee));
   const [currency, setCurrency] = useState(property.currency || "ARS");
   const [minNights, setMinNights] = useState(String(property.min_nights));
 
   const priceNum = Number(price) || 0;
-  const packNum = pack === "" ? null : Number(pack) || 0;
   const cleaningNum = Number(cleaning) || 0;
   const cur = (currency || "ARS").toUpperCase();
 
@@ -31,7 +27,7 @@ export function PrecioForm({ property }: { property: Property }) {
     startTransition(async () => {
       const res = await updatePropertyPriceAction({
         price_per_night: price,
-        weekend_pack_price: pack,
+        weekend_pack_price: "",
         cleaning_fee: cleaning,
         currency: cur,
         min_nights: minNights,
@@ -53,16 +49,14 @@ export function PrecioForm({ property }: { property: Property }) {
           {formatMoney(priceNum, cur)}
           <span className="text-sm font-normal text-muted-foreground"> / noche</span>
         </p>
-        {packNum != null && packNum > 0 && (
-          <p className="mt-1 text-marron">
-            Pack finde vie–dom: <strong>{formatMoney(packNum, cur)}</strong>
-          </p>
-        )}
         {cleaningNum > 0 && (
           <p className="text-xs text-muted-foreground">
             + limpieza {formatMoney(cleaningNum, cur)}
           </p>
         )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Finde vie→dom = 2 noches × precio/noche (sin pack especial).
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -75,18 +69,6 @@ export function PrecioForm({ property }: { property: Property }) {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="pack">Pack finde vie–dom (opcional)</Label>
-        <Input
-          id="pack"
-          type="number"
-          min={0}
-          step={1}
-          value={pack}
-          onChange={(e) => setPack(e.target.value)}
-          placeholder="Dejá vacío para desactivar"
         />
       </div>
       <div className="space-y-2">

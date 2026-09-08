@@ -1,16 +1,14 @@
-import { differenceInCalendarDays, parseISO, getDay } from "date-fns";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export function nightsBetween(checkIn: string, checkOut: string): number {
   return differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn));
 }
 
-/** Finde normal: check-in viernes, check-out domingo (noches vie + sáb) = pack ARS */
+/** Pack finde desactivado — siempre false. */
 export function isWeekendPackRange(checkIn: string, checkOut: string): boolean {
-  const nights = nightsBetween(checkIn, checkOut);
-  if (nights !== 2) return false;
-  const inDay = getDay(parseISO(checkIn)); // 5 = viernes
-  const outDay = getDay(parseISO(checkOut)); // 0 = domingo
-  return inDay === 5 && outDay === 0;
+  void checkIn;
+  void checkOut;
+  return false;
 }
 
 export function calculateTotal(params: {
@@ -26,10 +24,7 @@ export function calculateTotal(params: {
   }
 
   const cleaning = params.cleaningFee ?? 0;
-  const pack = params.weekendPackPrice;
-  if (pack != null && pack > 0 && isWeekendPackRange(params.checkIn, params.checkOut)) {
-    return { nights, total: pack + cleaning, usedWeekendPack: true };
-  }
+  void params.weekendPackPrice;
 
   return {
     nights,
