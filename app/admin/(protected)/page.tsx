@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminPendingAlerts } from "@/components/admin/admin-pending-alerts";
+import { PushEnable } from "@/components/admin/push-enable";
 import { getAllReservations, getAvailability, getProperty } from "@/lib/data";
 import { formatARS } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
@@ -34,6 +35,15 @@ export default async function AdminDashboard() {
         pendingCount={pending.length}
         latestCode={pending[0]?.public_code ?? null}
       />
+
+      <Card className="bg-crema">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Notificaciones push</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PushEnable />
+        </CardContent>
+      </Card>
 
       {!configured && (
         <Card className="border-mostaza/40 bg-mostaza/10">
@@ -74,6 +84,9 @@ export default async function AdminDashboard() {
         </Button>
         <Button asChild size="sm" variant="outline">
           <Link href="/admin/fotos">Fotos</Link>
+        </Button>
+        <Button asChild size="sm" variant="outline">
+          <Link href="/admin/precio">Editar precio</Link>
         </Button>
         <Button asChild size="sm" variant="secondary">
           <Link href="/" target="_blank">

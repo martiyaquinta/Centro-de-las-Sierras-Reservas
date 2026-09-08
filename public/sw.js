@@ -1,5 +1,5 @@
-/* Minimal service worker — offline shell */
-const CACHE = "las-sierras-v1";
+/* Service worker — offline shell + Web Push admin */
+const CACHE = "las-sierras-v2";
 const PRECACHE = ["/", "/offline", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -37,5 +37,56 @@ self.addEventListener("fetch", (event) => {
         }
         return new Response("Offline", { status: 503 });
       })
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = {
+    title: "Nueva reserva — De Las Sierras",
+    body: "Tenés una solicitud pendiente",
+    url: "/admin/reservas",
+    tag: "sierras-reserva",
+  };
+  try {
+    if (event.data) {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    }
+  } catch {
+    try {
+      const text = event.data && event.data.text();
+      if (text) data.body = text;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      tag: data.tag || "sierras-reserva",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/admin/reservas" },
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/admin/reservas";
+  const url = new URL(target, self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
   );
 });

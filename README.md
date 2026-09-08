@@ -108,8 +108,9 @@ pnpm start
 | `/admin/reservas` | Confirmar / rechazar |
 | `/admin/calendario` | Available / blocked |
 | `/admin/fotos` | Upload / orden / cover |
-| `/admin/precio` | Precio y fees |
+| `/admin/precio` | Precio y fees (persiste en DB → web) |
 | `/admin/contenido` | Textos, amenities, WA |
+| `/admin/ajustes` | Push notifications + cuenta |
 | `/offline` | Fallback PWA |
 
 ## Reglas de negocio v1
@@ -131,6 +132,7 @@ Paleta tierra: beige `#F3EDE3`, terracota `#C47A4A`, marrón `#3C2A21`.
 ## PWA
 
 - Manifest: `/manifest.webmanifest`
+- Web Push admin: `VAPID_*` en env + botón en Dashboard/Ajustes; migration `0003_push_subscriptions.sql`
 - Service worker manual: `public/sw.js` (registrado en production por `PwaRegister`)
 - Offline fallback: `/offline`
 - En dev el SW no se registra (evita cache molesto)

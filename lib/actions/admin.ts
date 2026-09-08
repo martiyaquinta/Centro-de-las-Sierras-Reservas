@@ -86,7 +86,17 @@ export async function updatePropertyPriceAction(raw: unknown): Promise<ActionRes
   }
   const d = parsed.data;
   try {
-    const supabase = await requireAdmin();
+    if (!isSupabaseConfigured()) {
+      return {
+        ok: false,
+        error:
+          "Supabase no configurado: no se puede persistir el precio. Completá .env.local / env de Vercel.",
+      };
+    }
+
+    await requireAdmin();
+    // service role: evita fallos RLS raros; ya validamos admin arriba
+    const supabase = createServiceClient();
     const { data: row } = await supabase.from("property").select("id").limit(1).maybeSingle();
     if (!row) return { ok: false, error: "No hay property configurada" };
 
@@ -95,20 +105,24 @@ export async function updatePropertyPriceAction(raw: unknown): Promise<ActionRes
         ? null
         : Number(d.weekend_pack_price);
 
+    const currency = (d.currency || "ARS").toUpperCase();
+
     const { error } = await supabase
       .from("property")
       .update({
         price_per_night: d.price_per_night,
         weekend_pack_price: weekend,
         cleaning_fee: d.cleaning_fee,
-        currency: d.currency,
+        currency,
         min_nights: d.min_nights,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", row.id);
 
     if (error) return { ok: false, error: error.message };
     revalidatePath("/");
     revalidatePath("/reservar");
+    revalidatePath("/admin");
     revalidatePath("/admin/precio");
     return { ok: true };
   } catch (e) {
