@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Formatea montos del depto. Default USD (tarifa publicada). */
-export function formatMoney(amount: number, currency = "USD"): string {
+/** Formatea montos del depto. Default ARS (tarifa publicada). */
+export function formatMoney(amount: number, currency = "ARS"): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency,
@@ -14,9 +14,9 @@ export function formatMoney(amount: number, currency = "USD"): string {
   }).format(amount);
 }
 
-/** @deprecated Usar formatMoney — se mantiene por imports existentes; formatea en USD. */
+/** Formatea en ARS (alias de formatMoney con currency ARS). */
 export function formatARS(amount: number): string {
-  return formatMoney(amount, "USD");
+  return formatMoney(amount, "ARS");
 }
 
 export function generatePublicCode(): string {

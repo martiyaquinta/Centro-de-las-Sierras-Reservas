@@ -42,8 +42,8 @@ En el SQL Editor de Supabase, ejecutá el contenido de:
 supabase/migrations/0001_init.sql
 ```
 
-Eso crea tablas, RLS, seed de `property` y **~90 días de availability** (sáb+dom = `available`, resto `blocked`; puentes se abren en admin).
-Tarifa seed: **USD 50/noche**, pack finde sáb→lun (2 noches) **USD 100**.
+Eso crea tablas, RLS, seed de `property` y availability. Aplicá también `0002_ars_vie_dom_availability.sql` (precios ARS + finde vie→dom hasta 2026-12-31).
+Tarifa seed: **ARS 77.500/noche**, pack finde vie→dom (2 noches) **ARS 155.000**. Noches libres por defecto: **vie+sáb** (checkout domingo).
 
 ### 3. Storage
 
@@ -116,7 +116,7 @@ pnpm start
 
 - Solicitud `pending` con **hold 48h** sobre las noches
 - Solo rangos donde todas las noches están `available` y no hay reserva `confirmed` ni `pending` con hold vigente
-- Total server-side: `noches * price_per_night` (+ cleaning) o pack finde sáb→lun (2 noches) si está seteado
+- Total server-side: `noches * price_per_night` (+ cleaning) o pack finde vie→dom (2 noches) si está seteado
 - **Sin Mercado Pago** en v1
 - Capacidad máx. 3
 

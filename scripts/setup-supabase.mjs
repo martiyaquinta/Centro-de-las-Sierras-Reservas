@@ -48,10 +48,13 @@ if (!url || !anon || !service || !ref) {
   process.exit(1);
 }
 
-const sqlPath = join(root, "supabase/migrations/0001_init.sql");
-const sql = readFileSync(sqlPath, "utf8");
+const migrationsDir = join(root, "supabase/migrations");
+const migrationFiles = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => join(migrationsDir, f));
 
-async function runSqlViaPg(connectionString) {
+async function runSqlViaPg(connectionString, sql, label) {
   const client = new pg.Client({
     connectionString,
     ssl: { rejectUnauthorized: false },
@@ -59,13 +62,13 @@ async function runSqlViaPg(connectionString) {
   await client.connect();
   try {
     await client.query(sql);
-    console.log("✓ SQL aplicado via Postgres");
+    console.log("✓ SQL aplicado via Postgres:", label);
   } finally {
     await client.end();
   }
 }
 
-async function runSqlViaManagement(token) {
+async function runSqlViaManagement(token, sql, label) {
   const endpoint = `https://api.supabase.com/v1/projects/${ref}/database/query`;
   const res = await fetch(endpoint, {
     method: "POST",
@@ -79,7 +82,16 @@ async function runSqlViaManagement(token) {
   if (!res.ok) {
     throw new Error(`Management API ${res.status}: ${text.slice(0, 400)}`);
   }
-  console.log("✓ SQL aplicado via Management API");
+  console.log("✓ SQL aplicado via Management API:", label);
+}
+
+async function applyAllMigrations(runOne) {
+  if (!migrationFiles.length) throw new Error("No hay migrations *.sql");
+  for (const path of migrationFiles) {
+    const label = path.split("/").pop();
+    console.log("→", label);
+    await runOne(readFileSync(path, "utf8"), label);
+  }
 }
 
 function dbUrlFromPassword(password) {
@@ -93,7 +105,7 @@ function dbUrlFromPassword(password) {
 
 async function applySql() {
   if (env.DATABASE_URL) {
-    await runSqlViaPg(env.DATABASE_URL);
+    await applyAllMigrations((sql, label) => runSqlViaPg(env.DATABASE_URL, sql, label));
     return;
   }
   if (env.SUPABASE_DB_PASSWORD) {
@@ -101,7 +113,7 @@ async function applySql() {
     let lastErr;
     for (const u of urls) {
       try {
-        await runSqlViaPg(u);
+        await applyAllMigrations((sql, label) => runSqlViaPg(u, sql, label));
         return;
       } catch (e) {
         lastErr = e;
@@ -111,7 +123,9 @@ async function applySql() {
     throw lastErr;
   }
   if (env.SUPABASE_ACCESS_TOKEN) {
-    await runSqlViaManagement(env.SUPABASE_ACCESS_TOKEN);
+    await applyAllMigrations((sql, label) =>
+      runSqlViaManagement(env.SUPABASE_ACCESS_TOKEN, sql, label)
+    );
     return;
   }
   throw new Error(

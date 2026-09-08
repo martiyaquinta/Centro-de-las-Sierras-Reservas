@@ -40,7 +40,7 @@ function mapProperty(row: Record<string, unknown>): Property {
     weekend_pack_price:
       row.weekend_pack_price == null ? null : Number(row.weekend_pack_price),
     cleaning_fee: Number(row.cleaning_fee ?? 0),
-    currency: String(row.currency ?? "USD"),
+    currency: String(row.currency ?? "ARS"),
     min_nights: Number(row.min_nights ?? 1),
     check_in_time: (row.check_in_time as string) ?? null,
     check_out_time: (row.check_out_time as string) ?? null,
