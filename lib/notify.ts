@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatMoney } from "@/lib/utils";
+import { notifyAdminPush } from "@/lib/web-push";
 
 export type ReservationNotifyPayload = {
   publicCode: string;
@@ -91,7 +92,7 @@ function escapeHtml(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-/** Envía mail al admin. Nunca tira: loguea y sigue. */
+/** Mail + Web Push al admin. Nunca tira: loguea y sigue. */
 export async function notifyAdminNewReservation(
   payload: ReservationNotifyPayload
 ): Promise<{ ok: boolean; error?: string }> {
@@ -101,12 +102,25 @@ export async function notifyAdminNewReservation(
     process.env.RESEND_FROM_EMAIL ||
     "Departamento de las Sierras <onboarding@resend.dev>";
 
+  const { subject, text, html } = buildReservationEmail(payload);
+  const total = formatMoney(payload.totalAmount, payload.currency || "ARS");
+  const pushBody = `${payload.guestName} · ${payload.checkIn} → ${payload.checkOut} · ${total} · ${payload.publicCode}`;
+
+  const pushPromise = notifyAdminPush({
+    title: `Nueva reserva ${payload.publicCode}`,
+    body: pushBody,
+    url: "/admin/reservas",
+    tag: `sierras-${payload.publicCode}`,
+  });
+
   if (!apiKey) {
     console.warn("[notify] RESEND_API_KEY ausente — no se envió mail de reserva", payload.publicCode);
-    return { ok: false, error: "RESEND_API_KEY ausente" };
+    const push = await pushPromise;
+    return {
+      ok: push.ok || push.sent > 0,
+      error: push.error ? `mail ausente; push: ${push.error}` : "RESEND_API_KEY ausente",
+    };
   }
-
-  const { subject, text, html } = buildReservationEmail(payload);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -124,19 +138,24 @@ export async function notifyAdminNewReservation(
       }),
     });
     const body = await res.json().catch(() => ({}));
+    const push = await pushPromise;
     if (!res.ok) {
       const msg =
         typeof body === "object" && body && "message" in body
           ? String((body as { message: string }).message)
           : `HTTP ${res.status}`;
       console.error("[notify] Resend error", msg, body);
-      return { ok: false, error: msg };
+      return {
+        ok: push.sent > 0,
+        error: push.sent > 0 ? undefined : msg,
+      };
     }
-    console.info("[notify] mail ok", payload.publicCode, "→", to);
+    console.info("[notify] mail ok", payload.publicCode, "→", to, "push sent", push.sent);
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "error de red";
     console.error("[notify] exception", msg);
-    return { ok: false, error: msg };
+    const push = await pushPromise;
+    return { ok: push.sent > 0, error: push.sent > 0 ? undefined : msg };
   }
 }

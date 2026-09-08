@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PushEnable } from "@/components/admin/push-enable";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export default function AdminAjustesPage() {
@@ -6,6 +7,16 @@ export default function AdminAjustesPage() {
   return (
     <div className="mx-auto max-w-md space-y-4">
       <h1 className="font-serif text-2xl font-semibold">Ajustes</h1>
+
+      <Card className="bg-crema">
+        <CardHeader>
+          <CardTitle className="text-base">Notificaciones push</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PushEnable />
+        </CardContent>
+      </Card>
+
       <Card className="bg-crema">
         <CardHeader>
           <CardTitle className="text-base">Cuenta admin</CardTitle>

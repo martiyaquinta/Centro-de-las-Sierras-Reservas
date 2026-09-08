@@ -86,7 +86,7 @@ export function AdminPendingAlerts({
             : `${pendingCount} reservas esperando tu OK`}
         </p>
         <p className="text-xs text-muted-foreground">
-          Te llega mail a centrodelassierras@gmail.com con cada pedido nuevo.
+          Mail + push (si activaste notificaciones en Ajustes / Dashboard).
         </p>
       </div>
     </div>
