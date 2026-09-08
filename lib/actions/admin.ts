@@ -100,18 +100,14 @@ export async function updatePropertyPriceAction(raw: unknown): Promise<ActionRes
     const { data: row } = await supabase.from("property").select("id").limit(1).maybeSingle();
     if (!row) return { ok: false, error: "No hay property configurada" };
 
-    const weekend =
-      d.weekend_pack_price === "" || d.weekend_pack_price == null
-        ? null
-        : Number(d.weekend_pack_price);
-
     const currency = (d.currency || "ARS").toUpperCase();
 
     const { error } = await supabase
       .from("property")
       .update({
         price_per_night: d.price_per_night,
-        weekend_pack_price: weekend,
+        // Pack finde desactivado
+        weekend_pack_price: null,
         cleaning_fee: d.cleaning_fee,
         currency,
         min_nights: d.min_nights,

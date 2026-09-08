@@ -166,12 +166,6 @@ export default async function HomePage() {
                 {formatARS(property.price_per_night)}
                 <span className="text-base font-normal text-muted-foreground"> / noche</span>
               </p>
-              {property.weekend_pack_price != null && property.weekend_pack_price > 0 && (
-                <p className="text-sm text-marron">
-                  Pack finde (vie–dom):{" "}
-                  <strong>{formatARS(property.weekend_pack_price)}</strong>
-                </p>
-              )}
               {property.cleaning_fee > 0 && (
                 <p className="text-sm text-muted-foreground">
                   + limpieza {formatARS(property.cleaning_fee)}
@@ -236,10 +230,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <StickyCta
-        priceFrom={property.price_per_night}
-        weekendPack={property.weekend_pack_price}
-      />
+      <StickyCta priceFrom={property.price_per_night} />
     </>
   );
 }

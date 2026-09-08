@@ -214,12 +214,6 @@ export function BookingForm({
             <span className="text-muted-foreground">Precio / noche</span>
             <span>{formatARS(pricePerNight)}</span>
           </div>
-          {weekendPackPrice != null && weekendPackPrice > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Pack finde (vie–dom)</span>
-              <span>{formatARS(weekendPackPrice)}</span>
-            </div>
-          )}
           {minNights > 1 && (
             <p className="text-xs text-muted-foreground">Mínimo {minNights} noches</p>
           )}
@@ -228,7 +222,6 @@ export function BookingForm({
               <div className="flex items-center justify-between text-sm">
                 <span>
                   {pricing.nights} noche{pricing.nights === 1 ? "" : "s"}
-                  {pricing.usedWeekendPack ? " (pack finde)" : ""}
                 </span>
                 <span className="font-semibold">{formatARS(pricing.total - cleaningFee)}</span>
               </div>

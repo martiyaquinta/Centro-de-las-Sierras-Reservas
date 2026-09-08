@@ -12,7 +12,7 @@ export const DEMO_PROPERTY: Property = {
   whatsapp_e164: "5492266515776",
   capacity: 3,
   price_per_night: 77500,
-  weekend_pack_price: 155000,
+  weekend_pack_price: null,
   cleaning_fee: 0,
   currency: "ARS",
   min_nights: 2,
